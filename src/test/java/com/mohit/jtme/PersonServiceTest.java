@@ -1,9 +1,11 @@
 package com.mohit.jtme;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -91,5 +93,49 @@ public class PersonServiceTest {
             personService.create(new Person(null, "John", email));
         }).isInstanceOf(RuntimeException.class)
                 .hasMessage("Person with email '"+email+"' already exists");
+    }
+
+    @Nested
+    class CreatePersonTests {
+        @Test
+        void shouldCreatePersonSuccessfully() {
+            Person person = personService.create(new Person(null, "Johny", "jhny@gmail.com"));
+            assertNotNull(person.getId());
+            assertEquals("Johny", person.getName());
+            assertEquals("jhny@gmail.com", person.getEmail());
+        }
+
+        @Test
+        void shouldFailToCreatePersonWithExistingEmail() {
+            String email = UUID.randomUUID() +"@gmail.com";
+            personService.create(new Person(null, "Johny", email));
+
+            assertThatThrownBy(()-> personService.create(new Person(null, "Johny", email)))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessage("Person with email '"+email+"' already exists");
+        }
+    }
+
+    @Nested
+    class FindPersonByEmailTests {
+        String email;
+
+        @BeforeEach
+        void setUp() {
+            email = UUID.randomUUID() +"@gmail.com";
+            personService.create(new Person(null, "John", email));
+        }
+
+        @Test
+        void shouldGetPersonByEmailWhenExists() {
+            Optional<Person> optionalPerson = personService.findByEmail(email);
+            assertThat(optionalPerson).isPresent();
+        }
+
+        @Test
+        void shouldGetEmptyWhenPersonByEmailNotExists() {
+            Optional<Person> optionalPerson = personService.findByEmail("random@mail.com");
+            assertThat(optionalPerson).isEmpty();
+        }
     }
 }
